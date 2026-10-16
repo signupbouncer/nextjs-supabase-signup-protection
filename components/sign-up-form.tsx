@@ -39,6 +39,7 @@ export function SignUpForm({
       return;
     }
 
+    // #region sign-up-call
     try {
       const { error } = await supabase.auth.signUp({
         email,
@@ -54,6 +55,7 @@ export function SignUpForm({
     } finally {
       setIsLoading(false);
     }
+    // #endregion
   };
 
   return (

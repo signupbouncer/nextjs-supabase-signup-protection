@@ -1,109 +1,64 @@
-<a href="https://demo-nextjs-with-supabase.vercel.app/">
-  <img alt="Next.js and Supabase Starter Kit - the fastest way to build apps with Next.js and Supabase" src="https://demo-nextjs-with-supabase.vercel.app/opengraph-image.png">
-  <h1 align="center">Next.js and Supabase Starter Kit</h1>
-</a>
+# Next.js and Supabase starter with signup protection
 
-<p align="center">
- The fastest way to build apps with Next.js and Supabase
-</p>
+The official Next.js and Supabase starter
+([vercel/next.js `examples/with-supabase`](https://github.com/vercel/next.js/tree/canary/examples/with-supabase)),
+with signupbouncer's Before User Created hook in its local Supabase config. The hook refuses burner addresses and
+repeat signups before Supabase creates the user or sends a confirmation email.
 
-<p align="center">
-  <a href="#features"><strong>Features</strong></a> ·
-  <a href="#demo"><strong>Demo</strong></a> ·
-  <a href="#deploy-to-vercel"><strong>Deploy to Vercel</strong></a> ·
-  <a href="#clone-and-run-locally"><strong>Clone and run locally</strong></a> ·
-  <a href="#feedback-and-issues"><strong>Feedback and issues</strong></a>
-  <a href="#more-supabase-examples"><strong>More Examples</strong></a>
-</p>
-<br/>
+The walkthrough is
+[Keep bot signups off your Supabase free tier](https://signupbouncer.com/guides/supabase-bot-signups).
 
-## Features
+## What it adds to the starter
 
-- Works across the entire [Next.js](https://nextjs.org) stack
-  - App Router
-  - Pages Router
-  - Proxy
-  - Client
-  - Server
-  - It just works!
-- supabase-ssr. A package to configure Supabase Auth to use cookies
-- Password-based authentication block installed via the [Supabase UI Library](https://supabase.com/ui/docs/nextjs/password-based-auth)
-- Styling with [Tailwind CSS](https://tailwindcss.com)
-- Components with [shadcn/ui](https://ui.shadcn.com/)
-- Optional deployment with [Supabase Vercel Integration and Vercel deploy](#deploy-your-own)
-  - Environment variables automatically assigned to Vercel project
+| File | Change |
+| --- | --- |
+| `supabase/config.toml` | Local Supabase config (from `supabase init`, CLI 2.121.0) with the `[auth.hook.before_user_created]` block, email confirmation on, Auth email sent to Mailpit over SMTP so the hourly email limit applies, and the starter's confirmation and password reset email templates. |
+| `supabase/.env.example` | The two hook values: your signupbouncer hook URL and hook secret. |
+| `supabase/templates/` | Email templates that link to the starter's `/auth/confirm` route (from the Supabase UI library docs). |
+| `scripts/bot-wave.mts` | `npm run bot-wave`: five burner signups and one fresh Gmail signup against your local Supabase. It refuses any other Supabase URL. |
+| `components/sign-up-form.tsx` | Region comments only. The form already shows `error.message`, which is the hook's message when a signup is refused. |
+| `package.json` | Exact versions instead of `latest` and `^` ranges, plus the scripts and test packages. |
+| `test/` | Offline tests (`npm test`) and a live run against a running stack (`npm run test:live`). |
 
-## Demo
+## Run it
 
-You can view a fully working demo at [demo-nextjs-with-supabase.vercel.app](https://demo-nextjs-with-supabase.vercel.app/).
+You need Node 22.18 or later, Docker and the Supabase CLI.
 
-## Deploy to Vercel
+```sh
+git clone https://github.com/signupbouncer/nextjs-supabase-signup-protection
+cd nextjs-supabase-signup-protection
+npm install
+cp supabase/.env.example supabase/.env
+```
 
-Vercel deployment will guide you through creating a Supabase account and project.
+[Sign up for signupbouncer](https://signupbouncer.com/signup) (the Free plan needs no card), copy the Hook URL and Hook
+secret from your app's Integration tab into `supabase/.env`, then:
 
-After installation of the Supabase integration, all relevant environment variables will be assigned to the project so the deployment is fully functioning.
+```sh
+supabase start
+cp .env.example .env.local
+```
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fvercel%2Fnext.js%2Ftree%2Fcanary%2Fexamples%2Fwith-supabase&project-name=nextjs-with-supabase&repository-name=nextjs-with-supabase&demo-title=nextjs-with-supabase&demo-description=This+starter+configures+Supabase+Auth+to+use+cookies%2C+making+the+user%27s+session+available+throughout+the+entire+Next.js+app+-+Client+Components%2C+Server+Components%2C+Route+Handlers%2C+Server+Actions+and+Middleware.&demo-url=https%3A%2F%2Fdemo-nextjs-with-supabase.vercel.app%2F&external-id=https%3A%2F%2Fgithub.com%2Fvercel%2Fnext.js%2Ftree%2Fcanary%2Fexamples%2Fwith-supabase&demo-image=https%3A%2F%2Fdemo-nextjs-with-supabase.vercel.app%2Fopengraph-image.png)
+Put the Project URL and the Publishable key from `supabase status` into `.env.local`, then `npm run dev` and open
+http://localhost:3000. Confirmation emails land in Mailpit at http://localhost:54324.
 
-The above will also clone the Starter kit to your GitHub, you can clone that locally and develop locally.
+New signupbouncer apps start in shadow mode, which logs every check and refuses nothing. Choose Enforce under Mode on
+your app's Rules tab to refuse signups. `npm run bot-wave` shows the difference.
 
-If you wish to just develop locally and not deploy to Vercel, [follow the steps below](#clone-and-run-locally).
+## Tests
 
-## Clone and run locally
+```sh
+npm test            # offline
+npm run test:live   # needs local Supabase with the hook in Enforce mode, and a fresh hour of email
+```
 
-1. You'll first need a Supabase project which can be made [via the Supabase dashboard](https://database.new)
+`test:live` reads `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `DATABASE_URL`, `MAILPIT_URL`
+and, to follow the confirmation link through the app, `APP_URL`.
 
-2. Create a Next.js app using the Supabase Starter template npx command
+`next build` fetches the Geist font from Google Fonts, as the upstream starter does, so it needs internet access.
 
-   ```bash
-   npx create-next-app --example with-supabase with-supabase-app
-   ```
+## Credits and license
 
-   ```bash
-   yarn create next-app --example with-supabase with-supabase-app
-   ```
-
-   ```bash
-   pnpm create next-app --example with-supabase with-supabase-app
-   ```
-
-3. Use `cd` to change into the app's directory
-
-   ```bash
-   cd with-supabase-app
-   ```
-
-4. Rename `.env.example` to `.env.local` and update the following:
-
-  ```env
-  NEXT_PUBLIC_SUPABASE_URL=[INSERT SUPABASE PROJECT URL]
-  NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=[INSERT SUPABASE PROJECT API PUBLISHABLE OR ANON KEY]
-  ```
-  > [!NOTE]
-  > This example uses `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, which refers to Supabase's new **publishable** key format.
-  > Both legacy **anon** keys and new **publishable** keys can be used with this variable name during the transition period. Supabase's dashboard may show `NEXT_PUBLIC_SUPABASE_ANON_KEY`; its value can be used in this example.
-  > See the [full announcement](https://github.com/orgs/supabase/discussions/29260) for more information.
-
-  Both `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` can be found in [your Supabase project's API settings](https://supabase.com/dashboard/project/_?showConnect=true)
-
-5. You can now run the Next.js local development server:
-
-   ```bash
-   npm run dev
-   ```
-
-   The starter kit should now be running on [localhost:3000](http://localhost:3000/).
-
-6. This template comes with the default shadcn/ui style initialized. If you instead want other ui.shadcn styles, delete `components.json` and [re-install shadcn/ui](https://ui.shadcn.com/docs/installation/next)
-
-> Check out [the docs for Local Development](https://supabase.com/docs/guides/getting-started/local-development) to also run Supabase locally.
-
-## Feedback and issues
-
-Please file feedback and issues over on the [Supabase GitHub org](https://github.com/supabase/supabase/issues/new/choose).
-
-## More Supabase examples
-
-- [Next.js Subscription Payments Starter](https://github.com/vercel/nextjs-subscription-payments)
-- [Cookie-based Auth and the Next.js 13 App Router (free course)](https://youtube.com/playlist?list=PL5S4mPUpp4OtMhpnp93EFSo42iQ40XjbF)
-- [Supabase Auth and the Next.js App Router](https://github.com/supabase/supabase/tree/master/examples/auth/nextjs)
+Built from `vercel/next.js` `examples/with-supabase` at
+[`b249055`](https://github.com/vercel/next.js/tree/b24905530cf93abd11067aa3fccfe4f10d89f083/examples/with-supabase).
+The upstream README is kept as `README.upstream.md`. MIT license: see `LICENSE` (Vercel, Inc. and SignupBouncer).
