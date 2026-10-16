@@ -6,7 +6,7 @@ with signupbouncer's Before User Created hook in its local Supabase config. The 
 repeat signups before Supabase creates the user or sends a confirmation email.
 
 The walkthrough is
-[Keep bot signups off your Supabase free tier](https://signupbouncer.com/guides/supabase-bot-signups).
+[Keep burner signups from using up your Supabase email limit](https://signupbouncer.com/guides/supabase-bot-signups).
 
 ## What it adds to the starter
 
